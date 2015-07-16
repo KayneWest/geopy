@@ -5,6 +5,8 @@
 from ssl import SSLError
 from socket import timeout as SocketTimeout
 import json
+import certifi
+import urllib3
 
 from geopy.compat import (
     string_compare,
@@ -126,10 +128,17 @@ class Geocoder(object): # pylint: disable=R0921
         """
         For a generated query URL, get the results.
         """
-        requester = requester or self.urlopen
+        requester = urllib3.PoolManager(
+	     cert_reqs='CERT_REQUIRED', # Force certificate check.
+	     ca_certs=certifi.where(),  # Path to the Certifi bundle.
+		)
+		#r = http.request('GET', 'https://s3.amazonaws.com/text-datasets/nietzsche.txt')
+        
+        #requester = requester or self.urlopen
+        
 
         try:
-            page = requester(url, timeout=(timeout or self.timeout), **kwargs)
+            page = requester.request('GET', url, timeout=(timeout or self.timeout), **kwargs)
         except Exception as error: # pylint: disable=W0703
             message = (
                 str(error) if not py3k
